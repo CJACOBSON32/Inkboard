@@ -3,13 +3,10 @@ import * as mongodb from "mongodb";
 import { promises as fs } from "fs";
 import {sUserPath} from "../src/js/UserPath";
 import morgan from "morgan";
-import CryptoJS from "crypto-js";
 import sha256 from 'crypto-js/sha256.js';
 import path, {dirname} from "path";
 import { fileURLToPath } from 'url';
-import session from "express-session";
-import passport from "passport";
-import local from "passport-local"
+
 
 const port = '3000';
 
@@ -24,7 +21,7 @@ const app = express();
 app.use(morgan('tiny'));										// Logging
 app.use(express.static('src', {index: "login.html"}));	// Login page
 app.use(express.json());											// Json parsing
-app.use(passport.session());										// Start passport session
+// app.use(passport.session());										// Start passport session
 
 
 // Setup client and connection

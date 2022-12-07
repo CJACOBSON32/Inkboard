@@ -5,7 +5,6 @@ import morgan from "morgan";
 import sha256 from 'crypto-js/sha256.js';
 import path, { dirname } from "path";
 import { fileURLToPath } from 'url';
-import passport from "passport";
 const port = '3000';
 // get mongodb credentials from mongodb.config.json
 const credentials = JSON.parse(await fs.readFile('./mongodb.config.json', 'utf-8'));
@@ -16,7 +15,7 @@ const app = express();
 app.use(morgan('tiny')); // Logging
 app.use(express.static('src', { index: "login.html" })); // Login page
 app.use(express.json()); // Json parsing
-app.use(passport.session()); // Start passport session
+// app.use(passport.session());										// Start passport session
 // Setup client and connection
 // @ts-ignore
 const client = new mongodb.MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
