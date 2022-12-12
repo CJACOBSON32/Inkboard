@@ -19,6 +19,7 @@ const widthInput = document.getElementById("width");
 const signOutBtn = document.getElementById("sign-out");
 const userID = localStorage.getItem("username");
 const password = localStorage.getItem("password");
+const socket = new WebSocket(`ws://${window.location.host}`);
 //**************
 //* Networking *
 //**************
@@ -29,12 +30,16 @@ const password = localStorage.getItem("password");
 function submitPath(userPath) {
     const s_UserPath = clientToServerPath(userPath);
     const body = JSON.stringify(s_UserPath);
+    socket.send(body);
     fetch('/draw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body
     }).catch(console.log);
 }
+socket.addEventListener('message', (event) => {
+    console.log(event.data);
+});
 function clearUserPaths() {
     const body = JSON.stringify({
         userID: userID,

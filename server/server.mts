@@ -1,11 +1,15 @@
 import express from "express";
 import * as mongodb from "mongodb";
 import { promises as fs } from "fs";
-import {sUserPath} from "../src/js/UserPath";
+import {sUserPath, UserPath} from "../src/js/UserPath";
 import morgan from "morgan";
 import sha256 from 'crypto-js/sha256.js';
 import path, {dirname} from "path";
 import { fileURLToPath } from 'url';
+import http from "http";
+import {WebSocketServer} from "ws";
+import EventEmitter from "events";
+import { v4 as uuidv4 } from 'uuid';
 
 
 const port = '3000';
@@ -21,8 +25,36 @@ const app = express();
 app.use(morgan('tiny'));										// Logging
 app.use(express.static('src', {index: "login.html"}));	// Login page
 app.use(express.json());											// Json parsing
-// app.use(passport.session());										// Start passport session
 
+// *******************
+// * Websocket stuff *
+// *******************
+const serverEvents = new EventEmitter();
+const server = http.createServer(app);
+const wss = new WebSocketServer({server: server});
+
+wss.on("connection", (ws) => {
+	console.log("New Client connected");
+	const clientID = uuidv4();
+
+	ws.on("message", (message) => {
+		const newPath = JSON.parse(message as unknown as string) as UserPath;
+
+		console.log(newPath);
+
+		serverEvents.emit('newPath', clientID);
+
+		// canvasCollection?.insertOne(newPath);
+	});
+
+	serverEvents.on('newPath', (ev) => {
+		ws.send(`You are ${ev}`);
+	});
+
+	ws.on("close", (event) => {
+		console.log(`Client ${ws} disconnected`);
+	});
+});
 
 // Setup client and connection
 // @ts-ignore
@@ -62,10 +94,9 @@ client.connect()
 		canvasCollection = _collection;
 		return _collection.find({}).toArray();
 	})
-	.then(console.log);
+	.then(() => console.log("Connected to mongodb paths"));
 
 // Connect to User database
-// Connect to Paths database
 client.connect()
 	.then( () => {
 		return client.db( 'Canvas' ).collection('Users');
@@ -74,7 +105,7 @@ client.connect()
 		userCollection = _collection;
 		return _collection.find({}).toArray();
 	})
-	.then(console.log);
+	.then(() => console.log("Connected to mongodb Users"));
 
 // route to get all docs
 app.get( '/canvas', (req,res) => {
@@ -112,5 +143,9 @@ app.delete('/clear', (req, res) => {
 		});
 });
 
-app.listen( process.env.PORT || port );
-console.log(`Listening on port ${process.env.PORT || port}`);
+server.listen(process.env.PORT || port, () => {
+	console.log(`Listening on port ${process.env.PORT || port}`);
+});
+
+// app.listen( process.env.PORT || port );
+// console.log(`Listening on port ${process.env.PORT || port}`);
