@@ -26,19 +26,28 @@ const serverEvents = new EventEmitter();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server: server });
 wss.on("connection", (ws) => {
-    console.log("New Client connected");
     const clientID = uuidv4();
-    ws.on("message", (message) => {
-        const newPath = JSON.parse(message);
-        console.log(newPath);
-        serverEvents.emit('newPath', clientID);
-        // canvasCollection?.insertOne(newPath);
-    });
+    console.log(`Client ${clientID} Connected`);
     serverEvents.on('newPath', (ev) => {
-        ws.send(`You are ${ev}`);
+        if (ev.id !== clientID) {
+            ws.send(JSON.stringify(ev.path));
+        }
+    });
+    serverEvents.on('delete', (id) => {
+        if (id === clientID)
+            ws.send('delete');
+    });
+    ws.on("message", (message) => {
+        if (message === "delete") {
+            serverEvents.emit('delete', clientID);
+            return;
+        }
+        const newPath = JSON.parse(message);
+        serverEvents.emit('newPath', { id: clientID, path: newPath });
+        canvasCollection?.insertOne(newPath);
     });
     ws.on("close", (event) => {
-        console.log(`Client ${ws} disconnected`);
+        console.log(`Client ${clientID} disconnected`);
     });
 });
 // Setup client and connection

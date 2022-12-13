@@ -34,25 +34,35 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({server: server});
 
 wss.on("connection", (ws) => {
-	console.log("New Client connected");
 	const clientID = uuidv4();
+	console.log(`Client ${clientID} Connected`);
 
-	ws.on("message", (message) => {
-		const newPath = JSON.parse(message as unknown as string) as UserPath;
-
-		console.log(newPath);
-
-		serverEvents.emit('newPath', clientID);
-
-		// canvasCollection?.insertOne(newPath);
+	serverEvents.on('newPath', (ev: {id: string, path: sUserPath}) => {
+		if (ev.id !== clientID) {
+			ws.send(JSON.stringify(ev.path));
+		}
 	});
 
-	serverEvents.on('newPath', (ev) => {
-		ws.send(`You are ${ev}`);
+    serverEvents.on('delete', (id) => {
+        if (id === clientID)
+            ws.send('delete');
+    });
+
+	ws.on("message", (message) => {
+		if (message as unknown as string === "delete") {
+			serverEvents.emit('delete', clientID);
+            return;
+		}
+
+		const newPath = JSON.parse(message as unknown as string) as sUserPath;
+
+		serverEvents.emit('newPath', {id: clientID, path: newPath});
+
+		canvasCollection?.insertOne(newPath);
 	});
 
 	ws.on("close", (event) => {
-		console.log(`Client ${ws} disconnected`);
+		console.log(`Client ${clientID} disconnected`);
 	});
 });
 

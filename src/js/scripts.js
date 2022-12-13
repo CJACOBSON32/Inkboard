@@ -31,20 +31,26 @@ function submitPath(userPath) {
     const s_UserPath = clientToServerPath(userPath);
     const body = JSON.stringify(s_UserPath);
     socket.send(body);
-    fetch('/draw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: body
-    }).catch(console.log);
+    // fetch('/draw', {
+    // 	method: 'POST',
+    // 	headers: {'Content-Type': 'application/json'},
+    // 	body: body
+    // }).catch(console.log);
 }
 socket.addEventListener('message', (event) => {
-    console.log(event.data);
+    if (event.data === 'delete') {
+        refreshPaths();
+        return;
+    }
+    const userPath = JSON.parse(event.data);
+    paths.push(serverToClientPath(userPath));
 });
 function clearUserPaths() {
     const body = JSON.stringify({
         userID: userID,
         password: password
     });
+    socket.send('delete');
     fetch('/clear', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -63,9 +69,8 @@ function refreshPaths() {
 // Get paths at the beginning
 refreshPaths();
 // Refresh paths every 5 seconds
-let refreshPaused = false;
-setInterval(() => { if (!refreshPaused)
-    refreshPaths(); }, 5000);
+// let refreshPaused = false;
+// setInterval(() => { if (!refreshPaused) refreshPaths() }, 5000);
 //*********************
 //* Utility Functions *
 //*********************
@@ -107,7 +112,7 @@ canvas.addEventListener("mousedown", ev => {
             paths.push(currentPath);
             currentPath.path.add(getMousePos(ev.x, ev.y));
             // Stop refreshing canvas
-            refreshPaused = true;
+            // refreshPaused = true;
             break;
         case 1: // Left mouse button
             middleMouseDown = true;
@@ -132,8 +137,8 @@ window.addEventListener("mouseup", ev => {
                 submitPath(currentPath);
                 currentPath = null;
                 // Resume refreshing canvas
-                refreshPaths();
-                refreshPaused = false;
+                // refreshPaths();
+                // refreshPaused = false;
             }
             break;
         case 1: // Middle mouse button
@@ -154,7 +159,7 @@ canvas.addEventListener("mousemove", ev => {
 //* Handle Other Events *
 //***********************
 // Refresh canvas when window focus changes
-window.addEventListener('focus', refreshPaths);
+// window.addEventListener('focus', refreshPaths);
 // Clear all User paths
 clearBtn.addEventListener('click', clearUserPaths);
 // Sign out (redirect to login page)

@@ -43,15 +43,22 @@ function submitPath(userPath: UserPath) {
 
 	socket.send(body);
 
-	fetch('/draw', {
-		method: 'POST',
-		headers: {'Content-Type': 'application/json'},
-		body: body
-	}).catch(console.log);
+	// fetch('/draw', {
+	// 	method: 'POST',
+	// 	headers: {'Content-Type': 'application/json'},
+	// 	body: body
+	// }).catch(console.log);
 }
 
 socket.addEventListener('message', (event) => {
-	console.log(event.data);
+	if (event.data === 'delete') {
+		refreshPaths();
+		return;
+	}
+
+	const userPath = <sUserPath>JSON.parse(event.data);
+
+	paths.push(serverToClientPath(userPath));
 });
 
 function clearUserPaths() {
@@ -59,6 +66,8 @@ function clearUserPaths() {
 		userID: userID,
 		password: password
 	});
+
+	socket.send('delete');
 
 	fetch('/clear', {
 		method: 'DELETE',
@@ -81,8 +90,8 @@ function refreshPaths() {
 refreshPaths();
 
 // Refresh paths every 5 seconds
-let refreshPaused = false;
-setInterval(() => { if (!refreshPaused) refreshPaths() }, 5000);
+// let refreshPaused = false;
+// setInterval(() => { if (!refreshPaused) refreshPaths() }, 5000);
 
 
 //*********************
@@ -135,7 +144,7 @@ canvas.addEventListener("mousedown", ev => {
 			currentPath.path.add(getMousePos(ev.x, ev.y));
 
 			// Stop refreshing canvas
-			refreshPaused = true;
+			// refreshPaused = true;
 			break;
 		case 1: // Left mouse button
 			middleMouseDown = true;
@@ -165,8 +174,8 @@ window.addEventListener("mouseup", ev => {
 				currentPath = null;
 
 				// Resume refreshing canvas
-				refreshPaths();
-				refreshPaused = false;
+				// refreshPaths();
+				// refreshPaused = false;
 			}
 			break;
 		case 1: // Middle mouse button
@@ -190,7 +199,7 @@ canvas.addEventListener("mousemove", ev => {
 //***********************
 
 // Refresh canvas when window focus changes
-window.addEventListener('focus', refreshPaths)
+// window.addEventListener('focus', refreshPaths);
 
 // Clear all User paths
 clearBtn.addEventListener('click', clearUserPaths);
