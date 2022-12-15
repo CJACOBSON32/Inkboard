@@ -18,6 +18,8 @@ paperView.setup(canvas);
 const paths: UserPath[] = []
 let currentPath: UserPath | null
 
+let eraseMode = true;
+
 // Get button inputs
 const clearBtn = <HTMLButtonElement>document.getElementById("clear");
 const colorInput = <HTMLInputElement>document.getElementById("color-picker");
@@ -42,12 +44,6 @@ function submitPath(userPath: UserPath) {
 	const body = JSON.stringify(s_UserPath);
 
 	socket.send(body);
-
-	// fetch('/draw', {
-	// 	method: 'POST',
-	// 	headers: {'Content-Type': 'application/json'},
-	// 	body: body
-	// }).catch(console.log);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -76,6 +72,16 @@ function clearUserPaths() {
 	})
 		.then(response => response.json())
 		.then(paths => replacePaths(paths));
+}
+
+function deletePath(userPath: sUserPath) {
+	const body = JSON.stringify(userPath);
+
+	fetch('/remove', {
+		method: 'DELETE',
+		headers: {'Content-Type': 'application/json'},
+		body: body
+	});
 }
 
 function refreshPaths() {
@@ -138,6 +144,9 @@ canvas.addEventListener("mousedown", ev => {
 		case 0: // Left mouse button
 			leftMouseDown = true;
 
+			if (eraseMode)
+				break;
+
 			// Init path
 			currentPath = { path: initPath(), user: userID };
 			paths.push(currentPath);
@@ -157,7 +166,11 @@ canvas.addEventListener("mousedown", ev => {
 window.addEventListener("mouseup", ev => {
 	switch (ev.button) {
 		case 0: // Left mouse button
+
 			leftMouseDown = false;
+
+			if (eraseMode)
+				break;
 
 			if (currentPath !== null) {
 				// Simplify line with fewer points
@@ -190,6 +203,23 @@ window.addEventListener("mouseup", ev => {
 // Draw line when mouse is dragged
 canvas.addEventListener("mousemove", ev => {
 	if (leftMouseDown) {
+		if (eraseMode) {
+			const hitResult = paperView.project.hitTest(getMousePos(ev.x, ev.y), {segments: true, stroke: true, tolerance: 5});
+
+			if (hitResult !== null) {
+				const pathIndex = paths.findIndex(userPath => userPath.path === hitResult.item);
+				const userPath = paths[pathIndex];
+
+				if (userPath !== undefined) {
+					deletePath(clientToServerPath(userPath));
+					paths.splice(pathIndex, pathIndex);
+					userPath.path.remove();
+				}
+			}
+
+			return;
+		}
+
 		currentPath!.path.add(getMousePos(ev.x, ev.y));
 	}
 });

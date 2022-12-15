@@ -122,7 +122,6 @@ app.post('/draw', (req, res) => {
 app.delete('/clear', (req, res) => {
     const auth = req.body;
     serverEvents.emit('delete');
-    console.log("Delete event received");
     // Push to MongoDB
     canvasCollection?.deleteMany({ user: auth.userID })
         .then(result => {
@@ -130,6 +129,12 @@ app.delete('/clear', (req, res) => {
         canvasCollection?.find({}).toArray()
             .then(paths => res.end(JSON.stringify(paths)));
     });
+});
+app.delete('/remove', (req, res) => {
+    const query = req.body;
+    serverEvents.emit('delete');
+    // Push to MongoDB
+    canvasCollection?.deleteOne(query);
 });
 server.listen(process.env.PORT || port, () => {
     console.log(`Listening on port ${process.env.PORT || port}`);
