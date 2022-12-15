@@ -37,9 +37,11 @@ function submitPath(userPath) {
     // 	body: body
     // }).catch(console.log);
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 socket.addEventListener('message', (event) => {
     if (event.data === 'delete') {
-        refreshPaths();
+        console.log('recieved delete');
+        sleep(1000).then(refreshPaths);
         return;
     }
     const userPath = JSON.parse(event.data);
@@ -50,7 +52,6 @@ function clearUserPaths() {
         userID: userID,
         password: password
     });
-    socket.send('delete');
     fetch('/clear', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },

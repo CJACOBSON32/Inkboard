@@ -50,9 +50,11 @@ function submitPath(userPath: UserPath) {
 	// }).catch(console.log);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 socket.addEventListener('message', (event) => {
 	if (event.data === 'delete') {
-		refreshPaths();
+		console.log('recieved delete');
+		sleep(1000).then(refreshPaths)
 		return;
 	}
 
@@ -66,8 +68,6 @@ function clearUserPaths() {
 		userID: userID,
 		password: password
 	});
-
-	socket.send('delete');
 
 	fetch('/clear', {
 		method: 'DELETE',
@@ -103,7 +103,7 @@ function initPath(): paper.Path {
 	const newPath = new paper.Path();
 	newPath.strokeColor = new paper.Color(colorInput.value);
 	newPath.strokeWidth = parseInt(widthInput.value);
-	newPath.strokeCap = "round"
+	newPath.strokeCap = "round";
 
 	// newPath.fullySelected = true
 

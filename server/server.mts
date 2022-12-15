@@ -44,13 +44,14 @@ wss.on("connection", (ws) => {
 	});
 
     serverEvents.on('delete', (id) => {
-        if (id === clientID)
+        if (id !== clientID)
             ws.send('delete');
     });
 
 	ws.on("message", (message) => {
 		if (message as unknown as string === "delete") {
 			serverEvents.emit('delete', clientID);
+			console.log("Delete event received");
             return;
 		}
 
@@ -143,6 +144,9 @@ app.post('/draw', (req, res) => {
 // Delete all lines associated with user
 app.delete('/clear', (req, res) => {
 	const auth = req.body as {userID: string, password: string};
+
+	serverEvents.emit('delete');
+	console.log("Delete event received");
 
 	// Push to MongoDB
 	canvasCollection?.deleteMany({user: auth.userID})
